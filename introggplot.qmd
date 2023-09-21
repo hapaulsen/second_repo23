@@ -1,6 +1,6 @@
 ---
 title: "ggplot"
-format: html
+format: pdf
 editor: visual
 echo: false
 output: false
