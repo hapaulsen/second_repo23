@@ -1,6 +1,6 @@
 ---
 title: "ggplot"
-format: html
+format: pdf
 editor: visual
 ---
 
@@ -696,3 +696,5 @@ head(alt_my_data, n = 3)
 ```
 
 test av branches
+
+ny test av branches
