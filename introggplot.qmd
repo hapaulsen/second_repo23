@@ -1,6 +1,6 @@
 ---
 title: "ggplot"
-format: pdf
+format: html
 editor: visual
 ---
 
@@ -299,29 +299,6 @@ PxWebApiData
   "http://data.ssb.no/api/v0/en/table/10540",
   returnMetaFrames = TRUE
   )
-```
-
-```{r}
-#Get more info about table
-ApiData(
-"http://data.ssb.no/api/v0/en/table/10540",
-returnApiQuery = TRUE
-) 
-```
-
-```{r}
-unemp99to02 <- ApiData12(
-  "http://data.ssb.no/api/v0/en/table/10540",
-  # Have not been able to specify more complex regions
-  Region = list("11*"),
-  Tid = c(paste(
-    rep(1999:2002, each = 12), 
-    "M",
-    sprintf("%02d", 1:12), 
-    sep = "")
-  ),
-  Alder = "15-19"
-)
 ```
 
 ```{r}
