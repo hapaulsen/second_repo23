@@ -2,23 +2,697 @@
 title: "ggplot"
 format: pdf
 editor: visual
-echo: false
-output: false
-message: false
 ---
 
 ```{r}
 #| label: setup
-#| echo: false
 #| output: false
 #| message: false
 library(tidyverse)
-```
-
-```{r}
-#| echo: true
-#| output: true
-2 + 2 
+library(ggpubr)
+library(nycflights13)
+library(styler)
+library(tidyverse)
 ```
 
 ## Intro ggplot
+
+```{r}
+ggplot(
+  data = mtcars,
+  mapping = aes(x = disp, y = mpg)
+  ) + 
+  geom_point() + 
+  geom_smooth(level = 0.99) + 
+  geom_smooth(method = "lm",
+              colour = "red",
+              se = FALSE)
+```
+
+```{r}
+gg1 <-   ggplot(data = mtcars, mapping = aes(x = disp, y = mpg)) +
+  geom_point()
+
+gg2 <-   ggplot(data = mtcars) +
+  geom_point(mapping = aes(x = disp, y = mpg))
+
+ggarrange(gg1, gg2, labels = c("mapping = aes in ggplot", "mapping = aes in geom_*"),
+          nrow = 1)
+```
+
+```{r}
+gg1 <-   ggplot(data = mtcars, mapping = aes(x = disp, y = mpg)) +
+  geom_point()
+```
+
+```{r}
+gg2 <-   ggplot(data = mtcars) +
+  geom_point(mapping = aes(x = disp, y = mpg))
+```
+
+```{r}
+ggarrange(gg1, gg2,
+         labels = c(
+           "mapping = aes in ggplot",
+           "mapping = aes in geom:*"),
+         nrow = 2)
+```
+
+```{r}
+ggplot() +
+  #geom_point has mapping as first argument. We have to use named arguments
+  #or switch their order
+  geom_point(
+    mapping = aes(x = disp, y = mpg, 
+                  size = factor(cyl),
+                  shape = factor(cyl), 
+                  colour = factor(cyl)
+                  ), 
+    data = mtcars
+    )
+```
+
+```{r}
+ggplot() +
+  #geom_point has mapping as first argument. We have to use named arguments
+  #or switch their order
+  geom_point(
+    mapping = aes(x = disp, y = mpg, 
+                  size = factor(cyl),
+                  shape = factor(cyl),
+                  ),
+    colour = "blue",
+    data = mtcars
+    )
+```
+
+```{r}
+ggplot() +
+  #geom_point has mapping as first argument. We have to use named arguments
+  #or switch their order
+  geom_point(
+    mapping = aes(x = disp, y = mpg,
+                  colour = factor(am),
+                  size = qsec,
+                  alpha = wt,
+                  shape = factor(cyl),
+                  ),
+    data = mtcars
+    )
+```
+
+```{r}
+gg2 <- ggplot() +
+  geom_point(
+    data = mtcars,
+    mapping = aes(
+      x = disp, 
+      y = mpg, 
+      colour = factor(cyl), 
+      alpha = 3.6*(0.25*1609.347)/qsec,
+      shape = factor(ifelse(am, "Man", "Aut"))
+      ), 
+    size = 4
+    ) +
+  labs(colour = "cyl",
+       alpha = "speed\n(km/h)",
+       shape = "trans-\nmission"
+       )
+```
+
+```{r}
+gg2 +
+geom_smooth(
+    data = mtcars, 
+    mapping = aes(x = disp, y = mpg),
+    span = 0.5,
+    level = 0.99
+    ) +
+  geom_smooth(
+    data = mtcars, 
+    mapping = aes(x = disp, y = mpg),
+    span = 0.5,
+    level = 0.95,
+    ) + 
+  geom_smooth(
+    data = mtcars,
+    mapping = aes(x = disp, y = mpg),
+    method = lm,
+    se = FALSE,
+    colour = "yellow"
+  )
+```
+
+```{r}
+gg2 + 
+  geom_smooth(
+    data = mtcars,
+    mapping = aes(x = disp, y = mpg),
+    method = "lm",
+    colour = "blue",
+    se = FALSE
+    ) +
+  # robust lm
+  geom_smooth(
+    data = mtcars,
+    mapping = aes(x = disp, y = mpg),
+    method = MASS::rlm,
+    colour = 'Red',
+    se = FALSE
+    )
+```
+
+```{r}
+## create tibble from scratch
+df_mean <-   tibble(
+  cyl = c("avg. car 4 cyl.", "avg. car 6 cyl.", "avg. car 8 cyl."), 
+  mpg = c(22.66, 17.74, 15.10), 
+  disp = c(105.14, 183.31, 353.10)
+  )
+```
+
+```{r}
+ggplot(
+  data = mtcars, 
+  mapping = aes(
+    x = hp, 
+    y = 1609.347/(2*qsec^2)
+    )
+  ) +
+  facet_wrap(~cut_number(wt, n =3)) +
+  geom_point(
+    aes(colour = cut_number(
+      wt, 
+      n = 3)
+      )
+    ) +
+  geom_smooth(
+    method = "lm", 
+    se = FALSE
+    )
+```
+
+```{r}
+#new dataframe to use for the grey points
+hp_acc <- data.frame(
+  hp = mtcars$hp, 
+  acc = 1609.347/(2*mtcars$qsec^2)
+  )
+
+ggplot(
+  data = mtcars, 
+  mapping = aes(x = hp, y = 1609.347/(2*qsec^2))
+  ) +
+  geom_point(
+    data = hp_acc, 
+    mapping = aes(x = hp, y = acc), colour = "grey80"
+    ) +
+  facet_wrap(
+    ~cut_number(
+      wt, 
+      n =3 , 
+      labels = c("Light", "Medium", "Heavy")
+      )
+    ) +
+  geom_point(
+    mapping = aes(colour = cut_number(
+      wt, 
+      n = 3, 
+      labels = c("Light", "Medium", "Heavy")
+      )
+      ),
+    show.legend = TRUE
+    ) +
+  geom_smooth(
+      mapping = aes(colour = cut_number(
+      wt, 
+      n = 3, 
+      labels = c("Light", "Medium", "Heavy")
+      )),
+    method = "lm", 
+    se = FALSE
+    ) +
+  labs(
+    y = "Mean acceleration (m/s^2)", 
+    colour = "Weight"
+    )
+```
+
+```{r}
+ggplot(
+  data = mtcars, 
+  mapping = aes(x = hp, y = 1609.347/(2*qsec^2))
+  ) +
+  geom_point(
+    data = hp_acc, 
+    mapping = aes(x = hp, y = acc), 
+    colour = "grey80"
+    ) +
+  facet_grid(
+    factor(cyl)~cut_number(
+      wt, 
+      n =3 , 
+      labels = c("Light", "Medium", "Heavy"))
+    ) +
+  geom_point(
+    mapping = aes(
+      colour = cut_number(
+        wt, 
+        n = 3, 
+        labels = c("Light", "Medium", "Heavy")
+        )
+      ),
+    show.legend = FALSE
+    ) +
+  geom_smooth(
+    method = "lm", 
+    se = FALSE
+    ) +
+  labs(
+    y = "Mean acceleration", 
+    colour = "Weight"
+    )
+```
+
+ 
+
+```{r}
+library(readr)
+Rogaland <- read_delim(
+  file = "Rogaland.csv", 
+  delim = ";", 
+  escape_double = FALSE,
+  locale = locale(
+    date_names = "nb", 
+    encoding = "ISO-8859-1"
+    ),
+  trim_ws = TRUE, 
+    skip = 1,
+  show_col_types = FALSE
+  )
+#trim_ws sletter whitespace 
+```
+
+PxWebApiData
+
+```{metadata_10540 <- ApiData(}
+  "http://data.ssb.no/api/v0/en/table/10540",
+  returnMetaFrames = TRUE
+  )
+```
+
+```{r}
+#Get more info about table
+ApiData(
+"http://data.ssb.no/api/v0/en/table/10540",
+returnApiQuery = TRUE
+) 
+```
+
+```{r}
+unemp99to02 <- ApiData12(
+  "http://data.ssb.no/api/v0/en/table/10540",
+  # Have not been able to specify more complex regions
+  Region = list("11*"),
+  Tid = c(paste(
+    rep(1999:2002, each = 12), 
+    "M",
+    sprintf("%02d", 1:12), 
+    sep = "")
+  ),
+  Alder = "15-19"
+)
+```
+
+```{r}
+paste(
+    rep(1999:2002, each = 12), 
+    "M",
+    sprintf("%02d", 1:12), 
+    sep = "")
+```
+
+```{r}
+rep(1999:2002, each = 12)
+```
+
+```{r}
+unemp99to02 <- ApiData12(
+  "http://data.ssb.no/api/v0/en/table/10540",
+  # Have not been able to specify more complex regions
+  Region = knr,
+  Tid = c(paste(
+    rep(1999:2002, each = 12),
+    "M",
+    sprintf("%02d", 1:12),
+    sep = ""
+  )),
+  Alder = "15-19"
+)
+```
+
+```{r}
+#| paged.print: false
+mtcars |>
+  as_tibble(rownames = "model") |>
+  arrange(cyl) |>
+  print(n = 32)
+    
+```
+
+```{r}
+#| paged.print: false
+data.frame(x = rnorm(2000), y = rnorm(2000, 2, 4))
+```
+
+```{r}
+#| paged.print: false
+my_mtcars <- mtcars |>
+  as_tibble(rownames = "model") |>
+  select(model:wt) |> 
+  select(model, vekt = wt, everything()) |> 
+  arrange(cyl, desc(model)) |>
+  print(n = 5)
+```
+
+```{r}
+#| paged.print: false
+my_mtcars
+```
+
+```{r}
+my_mtcars |> 
+  filter(cyl == 6) |> 
+  select(model) |> 
+  arrange(model) |> 
+  pull()
+```
+
+```{r}
+my_mtcars |> 
+  group_by(cyl) |> 
+  summarise(mean_hp = round(mean(hp), digits = 1))
+```
+
+```{r}
+my_mtcars |> 
+  group_by(cyl) |> 
+  summarise(mean_hp = round(mean(disp), digits = 1))
+```
+
+```{r}
+my_mtcars <- my_mtcars |> 
+  mutate(
+    hp_vs_disp = hp/disp
+  )
+```
+
+```{r}
+#Hvor godt utnyttee en cyl.volum til å ta ut effekt. 
+my_mtcars |> 
+  group_by(cyl) |> 
+  summarise(mean_hp_vs_disp = round(mean(hp_vs_disp), digits = 3))
+```
+
+```{r}
+flights
+```
+
+```{r}
+dim(flights)
+```
+
+```{r}
+class(flights)
+```
+
+```{r}
+#| paged.print: false 
+flights |> head(n = 10)
+```
+
+```{r}
+#| paged.print: false 
+flights |> 
+  arrange(desc(month), desc(day))
+```
+
+```{r}
+#| paged.print: false 
+flights |> 
+  arrange(desc(month))
+```
+
+```{r}
+flights <- flights |> 
+  arrange(month, day, desc(dep_time))
+```
+
+```{r}
+#| paged.print: false 
+flights |> tail()
+```
+
+```{r}
+#| paged.print: false 
+flights |> 
+filter(month == 1, day == 1) |>
+        print( n = 5, width = 70 )
+```
+
+```{r}
+#| paged.print: false 
+flights |> 
+  filter(month == 1, day == 1) |>
+  print( n = 5, width = 70 )
+
+```
+
+```{r}
+summary(flights)
+```
+
+```{r}
+print( 
+  filter(flights,
+         month == 1,
+         day %in% c(1, 15, 30)),
+  n = 5,
+  width = 70
+  )
+```
+
+-   Dersom vi ønsker for flere dager, %in% sier at dersom verdien for dag er i den listen som kommer etter, så skal det bli tatt med i filteret
+
+-   n R, `%in%` is an operator used to test if elements in one vector (or a set) are present in another vector (or set). It returns a logical vector of the same length as the left-hand side vector, indicating whether each element in the left-hand vector is found in the right-hand vector.
+
+-   Operatører
+
+    -   `==` NB! *not* `=`; equal
+
+    <!-- -->
+
+    -   `<, >, >=, <=,`
+
+        -   Mindre enn, større enn, større enn eller lik, mindre enn eller lik
+
+    -   `!` for negate, `!near(1/5 * 5, 5/5)` is FALSE.
+
+        -   Kan brukes dersom en for eksempel vil ha alle dagene med, med unntak for de som er oppramset
+
+    -   `|` is `or`, ex. TRUE \| FALSE is TRUE
+
+        -   Eller. Logisk operatør, hvis enten venstresiden eller høyresiden eller begge to er true blir bruk av denne true. Hvis begge er false, blir svaret false
+
+    -   `&` is `and`, ex. TRUE & FALSE is FALSE. TRUE & TRUE is TRUE, !(TRUE & FALSE) is TRUE
+
+        -   da skal begge være true for at svaret skal være true (tenk venndiagram, her er det bare delene som overlapper hverandre som vil komme ut)
+
+    -   `%in%` is very handy, x %in% c(1, 3), TRUE if x is 1 or 3
+
+finne antall flights i april og september, bruker %in% for å finne verdiene 4 og 9 i datasettet.
+
+```{r}
+flights |> 
+  filter(month %in% c(4, 9)) |>
+  nrow()
+```
+
+```{r}
+#| paged.print: false
+# bruke group_by month for å finne antall flygninger per måned
+   flights |>
+    group_by(month) |>
+    summarise(antall_flyvninger = n())
+```
+
+```{r}
+#| paged.print: false 
+#grupper hvor mange flights per dag i januar
+  flights |>
+  filter(month == 1) |>
+  group_by(day) |>
+  count() |>
+  print(n = 31)
+```
+
+-   finn dagen i januar med flest flygninger. Grupperer desc, og print(n=1)
+
+```{r}
+#| paged.print: false 
+  flights |>
+    filter(month == 1) |>
+    group_by(day) |>
+    count() |>
+    arrange(desc(n)) |>
+    print(n = 1)
+```
+
+-   i 2013 hvor mange flyvninger var det totalt på de to første dagene i månedene
+
+```{r}
+flights |>
+  group_by(day) |>
+  filter(day %in% c(1,2)) |>
+  nrow()
+```
+
+-   i 2013 hvor mange flyvinger hadde en annkomst forsinkelse mer enn 15 og mindre enn 30 min.
+
+-   Bruker flights, legger denne inn i en pipe. finner variablene til vi finner en som matcher. arr:delay gir svar. legger inn våre forutsetninger.
+
+-   bruker filter med to betingelser, knyter de sammen med and &
+
+```         
+```
+
+```{r}
+flights |>
+  filter(arr_delay >= 15 & arr_delay < 30) |>
+  nrow()
+```
+
+Er det noen NA-verdier vil hele resultatet bli NA.
+
+Sjekker for NA med is.na()
+
+Bruk \$for å finne en verdi, for å finne NA i en variabel.
+
+```{r}
+sum(is.na(flights$arr_delay))
+```
+
+Her med å legge inn is.na i en matematisk funksjon(sum()), gjør den automatisk en bokstav (na) til 1.
+
+```{r}
+print(
+  arrange(flights, desc(month), day),
+  n = 10,
+  width = 70
+  )
+```
+
+```{r}
+# Dropper variabelen year
+flights <- flights |>
+  select(-year)
+```
+
+```{r}
+flights <- flights |>
+  select(month:day, carrier, tailnum, everything())
+```
+
+```{r}
+#henter inn flights på ny. Pakken blir hentet på ny. alle endringer er fjernet.  
+flights <- nycflights13::flights
+```
+
+```{r}
+#alt i en chunk. tar vekk variabel, endrer rekkefølge, gir nytt navn på variabelnavn. 
+flights <- flights |>
+  select(-year) |>
+  select(
+    month:day,
+    flyselskap = carrier,
+    halenummer = tailnum,
+    everything()
+    ) |>
+  #setter tilbake navn 
+  rename(
+    carrier = flyselskap,
+    tailnum = halenummer
+  )
+```
+
+hent ut månedene dag, måned og arr_delay. Vis kun for mai måned.
+
+```{r}
+arr_delay_may <- flights |>
+  select(day, month, arr_delay) |>
+  filter(month == 5) |>
+  select(-month)
+```
+
+Finn gjennomsnittlig ankomstforsinkelse de ulike dagene i mai
+
+```{r}
+#gjennomsnittlig ankomstforsinkelse i mai 
+mean(is.na(arr_delay_may))
+```
+
+```{r}
+#| paged.print: false
+arr_delay_may |>
+  group_by(day) |>
+  summarise(gjsnitt_f = round(
+    mean(
+    arr_delay, 
+    na.rm = TRUE
+    ),
+    digits = 2
+  ),
+  median_f = median(arr_delay, na.rm = TRUE),
+  min_f = min(arr_delay, na.rm = TRUE),
+  max_f = max(arr_delay, na.rm = TRUE),
+  total_f = sum(arr_delay, na.rm = TRUE)
+  ) |>
+  print(n = 31)
+```
+
+```{r}
+flights <- flights %>%
+  #fjerner year, tar med variabler som ender med "delay". har lagt til to variabler gain og speed 
+  select(month:day, ends_with("delay"), distance, air_time) %>%
+  mutate(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60
+    ) %>%
+  select(month:day, gain, everything()) %>%
+  arrange(gain)
+head(flights, n = 5) 
+```
+
+```{r}
+#tar kun med de to du ønsker med transmute
+my_data <- flights %>%
+    transmute(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60
+    ) %>%
+  arrange(gain)
+head(my_data, n = 3)
+```
+
+```{r}
+alt_my_data <- flights %>%
+    mutate(
+    gain = dep_delay - arr_delay,
+    speed = (distance/air_time) * 60
+    ) %>%
+  select(gain, speed) |>
+  arrange(gain)
+head(alt_my_data, n = 3)
+```
+
+test av branches
